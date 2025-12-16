@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"wrangler dev\"",
+    "dev": "concurrently \"next dev\" \"partykit dev\"",
     "dev:next": "next dev",
-    "dev:party": "wrangler dev",
+    "dev:party": "partykit dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "partykit:deploy": "wrangler deploy",
     "partykit:dev": "wrangler dev"
   },

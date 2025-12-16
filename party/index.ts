@@ -1,30 +1,57 @@
-import { Server, type Connection } from "partyserver";
+import { Server } from "partyserver";
+import { sessionReducer, createInitialState, SessionActionSchema, type SessionState, type SessionAction } from "../lib/session";
 
 export class BrktServer extends Server {
-  constructor(public room: Record<string, unknown>) {
+  sessionState: SessionState | null = null;
+
+  constructor(public room: any) {
     super(room, {});
   }
 
-  onConnect(connection: Connection) {
+  async onConnect(connection: any) {
     console.log(`User ${connection.id} connected to room ${this.room.id}`);
     
-    // Send initial state to newly connected user
+    // Initialize session state if it doesn't exist
+    if (!this.sessionState) {
+      this.sessionState = createInitialState(this.room.id);
+    }
+
+    // Send current state to newly connected user
     connection.send(JSON.stringify({ 
-      type: "connected", 
+      type: "state_update", 
+      state: this.sessionState,
       userId: connection.id,
-      roomId: this.room.id,
       timestamp: Date.now()
     }));
   }
 
-  onMessage(connection: Connection, message: string) {
+  async onMessage(connection: any, message: string) {
     try {
       const data = JSON.parse(message);
       
-      // Broadcast message to all connected clients except sender
+      // Validate action with Zod
+      const actionResult = SessionActionSchema.safeParse(data);
+      if (!actionResult.success) {
+        console.error("Invalid action format:", actionResult.error);
+        return;
+      }
+
+      const action: SessionAction = actionResult.data;
+      
+      // Initialize state if it doesn't exist
+      if (!this.sessionState) {
+        this.sessionState = createInitialState(this.room.id);
+      }
+
+      // Apply action to state
+      this.sessionState = sessionReducer(this.sessionState, action);
+
+      // Broadcast state update to all connected clients
       this.broadcast(
         JSON.stringify({
-          ...data,
+          type: "state_update",
+          state: this.sessionState,
+          action,
           fromUserId: connection.id,
           timestamp: Date.now()
         }),
@@ -35,17 +62,18 @@ export class BrktServer extends Server {
     }
   }
 
-  onClose(connection: Connection) {
+  onClose(connection: any) {
     console.log(`User ${connection.id} disconnected from room ${this.room.id}`);
   }
 
-  onError(connection: Connection, error: Error) {
+  onError(connection: any, error: Error) {
     console.error(`Connection error for ${connection.id}:`, error);
   }
 }
 
-const server = {
-  BrktServer: BrktServer,
+// Export for Cloudflare Workers
+export default {
+  fetch(request: Request, env: any) {
+    return new Response("Party Server is running", { status: 200 });
+  },
 };
-
-export default server;

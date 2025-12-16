@@ -2,6 +2,7 @@
   "name": "brkt-starter",
   "main": "party/server.ts",
   "minify": false,
+  "compatibilityDate": "2025-12-16",
   "serve": {
     "host": "127.0.0.1",
     "port": 1999
