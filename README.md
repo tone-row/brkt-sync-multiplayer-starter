@@ -26,14 +26,17 @@ We organize state based on **where it needs to live** and **how long it should p
 - **Question**: "On refresh, should this still be true?"
 - **Storage**: Database, file system, or durable storage
 - **Examples**: User profiles, saved documents, configuration settings
-- **Implementation**: Party Server's durable storage via Cloudflare Workers
+- **Implementation**: **[Not Implemented]** - would require database or external storage
+- **Future**: Could integrate with Party Server's durable storage or external DB
 
 #### 2. Shared State (Session-scoped)
 - **Question**: "Do other people need to see this during the active session?"
-- **Storage**: In-memory on the server for the duration of the Cloudflare worker
+- **Storage**: Server memory for the duration of active connections
 - **Examples**: Live collaboration state, real-time cursors, shared toggles
-- **Implementation**: Party Server memory with WebSocket broadcasting
-- **Note**: Currently, realtime servers don't outlive when people have connections to them
+- **Implementation**:
+  - **Development**: PartyKit room storage (persists during development session)
+  - **Production**: In-memory only (resets when all users disconnect)
+- **Note**: Currently, session state is lost when the last user leaves the room
 
 #### 3. Short-term Client State
 - **Question**: "Is this just for the browser right now? (would it be there if I refreshed?)"
